@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HP - Sambung ke laptop</title>
+<style>
+:root{--t:#e9f2e6;--m:#9db3a2;--a:#b9dc92;--l:rgba(255,255,255,.14)}
+*{box-sizing:border-box;margin:0}
+body{min-height:100dvh;color:var(--t);font:15px/1.5 system-ui,sans-serif;background:linear-gradient(135deg,#0b1913,#1b3a2c,#0d2018)}
+h1,h2{font-family:Georgia,serif;font-weight:500}h1{font-size:1.6rem}h2{font-size:1.05rem}
+.wrap{max-width:460px;margin:0 auto;padding:calc(env(safe-area-inset-top) + 22px) 18px 40px}
+.gl{background:rgba(255,255,255,.07);border:1px solid var(--l);border-radius:22px;padding:18px;margin-top:14px}
+.m{color:var(--m);font-size:.88rem}
+button{margin:12px 6px 0 0;padding:11px 18px;border:0;border-radius:30px;background:linear-gradient(90deg,#d4e9b5,#8fb878);color:#12261d;font:600 .9rem system-ui;cursor:pointer}
+button.gh{background:none;border:1px solid var(--l);color:var(--t)}
+button.red{background:linear-gradient(90deg,#ffb4b4,#e07a7a)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#e07a7a;margin-right:8px}.dot.on{background:#7be08a;box-shadow:0 0 10px #7be08a}
+#cam{position:relative;margin-top:12px;border-radius:18px;overflow:hidden;background:#000;aspect-ratio:1/1}
+#cam video{width:100%;height:100%;object-fit:cover;display:block}
+#cam::after{content:"";position:absolute;inset:18%;border:2px solid var(--a);border-radius:16px;box-shadow:0 0 0 999px rgba(0,0,0,.35);pointer-events:none}
+#feed{max-height:320px;overflow:auto}
+.msg{padding:10px 12px;margin-top:8px;border-radius:14px;background:rgba(0,0,0,.3);border:1px solid var(--l)}
+.msg small{color:var(--m)}.msg.u{border-color:#ff9b9b;background:rgba(255,80,80,.18)}
+select{flex:1;min-width:0;background:rgba(0,0,0,.3);border:1px solid var(--l);border-radius:14px;color:var(--t);font:inherit;padding:9px 12px}
+.rw{display:flex;gap:6px;align-items:center;margin-top:6px}.rw button{margin:0}button.sm{padding:8px 12px;font-size:.8rem}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Sambung ke laptop</h1>
+
+  <div class="gl" id="scan">
+    <h2>Pindai QR dari laptop</h2>
+    <p class="m" style="margin-top:6px" id="sh">Ketuk tombol di bawah, izinkan kamera, lalu arahkan ke QR di layar laptop.</p>
+    <div id="cam" hidden><video id="v" playsinline muted></video></div>
+    <button id="go">📷 Pindai QR</button><button class="gh" id="stop" hidden>Tutup kamera</button>
+    <p class="m" id="se" style="margin-top:10px;color:#ffb4b4"></p>
+  </div>
+
+  <div id="ok" hidden>
+    <div class="gl">
+      <h2><span class="dot" id="dt"></span><span id="st">Menyambung...</span></h2>
+      <p class="m" style="margin-top:6px">HP ini terdaftar sebagai <b id="nm" style="color:var(--a)"></b>. Biarkan halaman ini terbuka agar pesan dari laptop sampai.</p>
+      <button class="red" id="al" hidden>🔕 Hentikan bunyi</button>
+      <button id="ts">Tes</button><button class="gh" id="re">Pindai QR lain</button>
+    </div>
+    <div class="gl"><h2>Bunyi</h2>
+      <p class="m" style="margin-top:4px">Pilih bunyi bawaan, atau pakai file suara sendiri (maks 1 MB).</p>
+      <p class="m" style="margin-top:10px">Bunyi pesan</p>
+      <div class="rw"><select id="sm"></select><button class="gh sm" id="fm">📁</button><button class="sm" id="cm">Coba</button></div>
+      <p class="m" style="margin-top:10px">Bunyi alarm (Cari HP / mendesak)</p>
+      <div class="rw"><select id="sa"></select><button class="gh sm" id="fa">📁</button><button class="sm" id="ca">Coba</button></div>
+      <input type="file" id="sf" accept="audio/*" hidden>
+      <p class="m" id="sx" style="margin-top:8px"></p>
+    </div>
+    <div class="gl"><h2>Pesan masuk</h2><div id="feed"><p class="m">Belum ada pesan.</p></div></div>
+  </div>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+<script>
+const $=s=>document.querySelector(s),RT=/^hp-[0-9a-f]{32}$/,RR=/^lp-[0-9a-f]{32}$/;
+let D=null,stream=null,raf=0,det=null,es=null,ac=null,rt=null,pg=null;
+
+function baca(s){try{const u=new URL(s),t=u.searchParams.get('t'),r=u.searchParams.get('r')||'';
+  if(RT.test(t))return{t,r:RR.test(r)?r:'',n:(u.searchParams.get('n')||'HP').slice(0,30)}}catch(e){}return null}
+
+function unlock(){try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){}}
+let CFG={msg:'beep',alarm:'sirine'};
+try{CFG={...CFG,...JSON.parse(localStorage.getItem('hp-snd')||'{}')}}catch(e){}
+const saveCfg=()=>{try{localStorage.setItem('hp-snd',JSON.stringify(CFG));return true}catch(e){return false}};
+function tone(type,f1,f2,dur,vol,at){if(!ac)return;at=at||0;const o=ac.createOscillator(),g=ac.createGain(),t0=ac.currentTime+at;
+  o.type=type;o.frequency.setValueAtTime(f1,t0);if(f2!==f1)o.frequency.linearRampToValueAtTime(f2,t0+dur);
+  g.gain.setValueAtTime(vol,t0);g.gain.exponentialRampToValueAtTime(.001,t0+dur);o.connect(g);g.connect(ac.destination);o.start(t0);o.stop(t0+dur)}
+const PLAY={
+  beep:()=>tone('square',880,880,.35,.25),
+  sirine:()=>tone('sawtooth',600,1200,.85,.25),
+  bel:()=>{tone('sine',1320,1320,.8,.4);tone('sine',1760,1760,.6,.25,.15)},
+  klakson:()=>{tone('sawtooth',440,440,.5,.2);tone('sawtooth',554,554,.5,.2)},
+  dering:()=>{for(let i=0;i<4;i++)tone('square',i%2?900:700,i%2?900:700,.12,.2,i*.14)}};
+const NAMA={beep:'Beep',sirine:'Sirine',bel:'Bel',klakson:'Klakson',dering:'Dering telepon'};
+let au=null,rt2=null;
+function stopFile(){if(au){au.pause();au=null}}
+function playFile(u,loop){stopFile();au=new Audio(u);au.loop=loop;au.play().catch(()=>{})}
+function pilih(m,alarm){
+  const tg=(m.tags||[]).find(x=>/^snd-/.test(x));
+  if(tg&&PLAY[tg.slice(4)])return{k:tg.slice(4)};
+  const s=alarm?CFG.alarm:CFG.msg,u=alarm?CFG.alarmFile:CFG.msgFile;
+  if(s==='file'&&u)return{url:u};
+  return{k:PLAY[s]?s:(alarm?'sirine':'beep')}}
+function bunyi(p){if(p.url)playFile(p.url,false);else PLAY[p.k]()}
+function stopRing(){clearInterval(rt);clearTimeout(rt2);rt=null;stopFile();$('#al').hidden=true}
+function ring(p){stopRing();$('#al').hidden=false;
+  if(p.url){playFile(p.url,true);navigator.vibrate&&navigator.vibrate([400,150,400]);rt2=setTimeout(stopRing,30000);return}
+  let n=0;const f=()=>{PLAY[p.k]();navigator.vibrate&&navigator.vibrate([400,150,400]);if(++n>=30)stopRing()};f();rt=setInterval(f,900)}
+$('#al').onclick=stopRing;document.addEventListener('click',unlock);
+
+function tampil(m){
+  const f=$('#feed');if(f.querySelector('p'))f.innerHTML='';
+  const d=document.createElement('div');d.className='msg'+((m.priority||3)>=5?' u':'');
+  const b=document.createElement('b'),p=document.createElement('div'),s=document.createElement('small');
+  b.textContent=m.title||'Dari laptop';p.textContent=m.message||'';
+  s.textContent=new Date((m.time||Date.now()/1000)*1000).toLocaleTimeString('id-ID');
+  d.append(b,p,s);
+  if(/^https?:\/\//i.test(m.click||'')){const a=document.createElement('a');a.href=m.click;a.target='_blank';a.rel='noopener';a.textContent=' 🔗 buka';a.style.color='var(--a)';p.append(a)}
+  f.prepend(d);
+  try{if(window.Notification&&Notification.permission==='granted')new Notification(b.textContent,{body:m.message||''})}catch(e){}
+}
+const status=(on,x)=>{$('#dt').className='dot'+(on?' on':'');$('#st').textContent=x};
+function ping(){if(D&&D.r)fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:D.r,title:D.t,message:'ping'})}).catch(()=>{})}
+function sambung(){
+  if(es)es.close();status(false,'Menyambung...');
+  es=new EventSource('https://ntfy.sh/'+D.t+'/sse?since='+Math.floor(Date.now()/1000));
+  es.onopen=()=>{status(true,'Terhubung ke laptop');ping()};
+  es.onerror=()=>status(false,'Terputus, mencoba lagi...');
+  es.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
+    if(m.event!=='message')return;
+    if((m.tags||[]).includes('cmd-stop')){stopRing();return}
+    tampil(m);unlock();const al=(m.priority||3)>=5,p=pilih(m,al);
+    if(al)ring(p);else{bunyi(p);navigator.vibrate&&navigator.vibrate(200)}};
+  clearInterval(pg);pg=setInterval(ping,25000);
+}
+async function jaga(){try{await navigator.wakeLock.request('screen')}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(D&&document.visibilityState==='visible'){jaga();ping();if(!es||es.readyState===2)sambung()}});
+
+function pakai(d){D=d;try{localStorage.setItem('hp-dev',JSON.stringify(d))}catch(e){}
+  tutup();$('#scan').hidden=true;$('#ok').hidden=false;$('#nm').textContent=d.n;jaga();sambung()}
+function tutup(){cancelAnimationFrame(raf);if(stream){stream.getTracks().forEach(x=>x.stop());stream=null}
+  $('#cam').hidden=true;$('#stop').hidden=true;$('#go').hidden=false}
+async function mulai(){
+  $('#se').textContent='';unlock();
+  try{window.Notification&&Notification.permission==='default'&&await Notification.requestPermission()}catch(e){}
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){$('#se').textContent='Kamera tidak didukung. Buka lewat Chrome.';return}
+  try{stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false})}
+  catch(e){$('#se').textContent='Izin kamera ditolak. Izinkan kamera untuk situs ini, lalu coba lagi.';return}
+  const v=$('#v');v.srcObject=stream;await v.play();
+  $('#cam').hidden=false;$('#stop').hidden=false;$('#go').hidden=true;$('#sh').textContent='Mencari QR...';
+  if('BarcodeDetector' in window){try{det=new BarcodeDetector({formats:['qr_code']})}catch(e){}}
+  const cv=document.createElement('canvas'),cx=cv.getContext('2d',{willReadFrequently:true});
+  const loop=async()=>{if(!stream)return;
+    if(v.readyState>=2&&v.videoWidth){let k=null;
+      if(det){try{const r=await det.detect(v);for(const c of r){k=baca(c.rawValue);if(k)break}}catch(e){}}
+      if(!k&&window.jsQR){const w=Math.min(v.videoWidth,640),h=Math.round(w*v.videoHeight/v.videoWidth);cv.width=w;cv.height=h;cx.drawImage(v,0,0,w,h);
+        const r=jsQR(cx.getImageData(0,0,w,h).data,w,h);if(r)k=baca(r.data)}
+      if(k){navigator.vibrate&&navigator.vibrate(60);pakai(k);return}}
+    raf=requestAnimationFrame(loop)};
+  loop()}
+$('#go').onclick=mulai;
+$('#stop').onclick=()=>{tutup();$('#sh').textContent='Ketuk tombol di bawah, izinkan kamera, lalu arahkan ke QR di layar laptop.'};
+$('#re').onclick=()=>{if(es)es.close();clearInterval(pg);stopRing();$('#ok').hidden=true;$('#scan').hidden=false;mulai()};
+$('#ts').onclick=()=>fetch('https://ntfy.sh/',{method:'POST',body:JSON.stringify({topic:D.t,title:'Tes',message:'Sambungan berhasil ✅'})}).catch(()=>{});
+
+function isi(sel,cur,file){sel.innerHTML='';
+  for(const k in NAMA){const o=document.createElement('option');o.value=k;o.textContent=NAMA[k];sel.appendChild(o)}
+  const o=document.createElement('option');o.value='file';o.textContent='File sendiri'+(file?' ✓':'');sel.appendChild(o);
+  sel.value=(cur==='file'&&!file)?'beep':cur}
+function ui(){isi($('#sm'),CFG.msg,CFG.msgFile);isi($('#sa'),CFG.alarm,CFG.alarmFile)}
+let slot='msg';
+function minta(s){slot=s;$('#sf').value='';$('#sf').click()}
+$('#fm').onclick=()=>minta('msg');$('#fa').onclick=()=>minta('alarm');
+$('#sf').onchange=()=>{const f=$('#sf').files[0];if(!f)return;
+  if(f.size>1048576){$('#sx').textContent='File terlalu besar (maks 1 MB).';return}
+  const r=new FileReader();r.onload=()=>{CFG[slot]='file';CFG[slot+'File']=r.result;
+    if(!saveCfg()){delete CFG[slot+'File'];CFG[slot]=slot==='msg'?'beep':'sirine';$('#sx').textContent='Gagal menyimpan file (penyimpanan penuh).'}
+    else $('#sx').textContent='File "'+f.name+'" dipakai.';ui()};r.readAsDataURL(f)};
+$('#sm').onchange=()=>{if($('#sm').value==='file'&&!CFG.msgFile){minta('msg');$('#sm').value=CFG.msg;return}CFG.msg=$('#sm').value;saveCfg()};
+$('#sa').onchange=()=>{if($('#sa').value==='file'&&!CFG.alarmFile){minta('alarm');$('#sa').value=CFG.alarm;return}CFG.alarm=$('#sa').value;saveCfg()};
+$('#cm').onclick=()=>{unlock();bunyi(pilih({},false))};
+$('#ca').onclick=()=>{unlock();ring(pilih({},true))};
+ui();
+
+let k=baca(location.href);
+if(!k){try{const j=JSON.parse(localStorage.getItem('hp-dev')||'null');if(j&&RT.test(j.t))k=j}catch(e){}}
+if(k)pakai(k);
+</script>
+</body>
+</html>

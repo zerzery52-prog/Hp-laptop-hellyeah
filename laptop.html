@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Laptop - Kontrol banyak HP</title>
+<style>
+:root{--t:#e9f2e6;--m:#9db3a2;--a:#b9dc92;--l:rgba(255,255,255,.14)}
+*{box-sizing:border-box;margin:0}
+body{min-height:100dvh;color:var(--t);font:15px/1.5 system-ui,sans-serif;background:linear-gradient(135deg,#0b1913,#1b3a2c,#0d2018)}
+h1,h2{font-family:Georgia,serif;font-weight:500}h1{font-size:1.6rem}h2{font-size:1.1rem;margin-bottom:8px}
+.wrap{max-width:1000px;margin:0 auto;padding:24px 18px 50px}
+.gl{background:rgba(255,255,255,.07);border:1px solid var(--l);border-radius:22px;padding:20px}
+.g{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px;margin-top:14px}
+.m{color:var(--m);font-size:.88rem}
+button{padding:9px 15px;border:0;border-radius:30px;background:linear-gradient(90deg,#d4e9b5,#8fb878);color:#12261d;font:600 .88rem system-ui;cursor:pointer}
+button.gh{background:none;border:1px solid var(--l);color:var(--m)}button.sm{padding:5px 10px;font-size:.78rem}
+input,textarea,select{width:100%;background:rgba(0,0,0,.3);border:1px solid var(--l);border-radius:14px;color:var(--t);font:inherit;padding:10px 14px;margin-top:8px;outline:0}
+textarea{min-height:70px;resize:vertical}
+input[type=checkbox]{width:auto;margin:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;align-items:center}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#qr{display:grid;place-items:center;padding:14px;margin:10px 0;background:#fff;border-radius:16px;min-height:120px;color:#333;text-align:center}
+.dev{display:flex;align-items:center;gap:8px;padding:9px 10px;margin-top:8px;border:1px solid var(--l);border-radius:14px;background:rgba(0,0,0,.2)}
+.dev .n{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dot{width:10px;height:10px;border-radius:50%;background:#e07a7a;flex:none}.dot.on{background:#7be08a;box-shadow:0 0 8px #7be08a}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:20px;border:1px solid var(--l);background:rgba(255,255,255,.06);cursor:pointer;font-size:.85rem}
+.chip b{color:#ff9b9b}
+pre{margin-top:10px;max-height:190px;overflow:auto;white-space:pre-wrap;font:13px/1.5 ui-monospace,monospace;background:rgba(0,0,0,.35);border-radius:14px;padding:12px}
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+<div class="wrap">
+  <h1>Kontrol banyak HP dari Laptop</h1>
+  <p class="m" style="margin-top:4px">Tiap HP punya QR sendiri. Pindai lewat tombol <b>📷 Pindai QR</b> di halaman hp.html.</p>
+
+  <div class="g">
+    <div class="gl"><h2>1. Daftar HP</h2>
+      <div class="row" style="margin-top:0"><input id="nn" placeholder="Nama HP baru (mis. HP Ibu)" style="flex:1;margin:0"><button id="add">+ Tambah</button></div>
+      <div id="dv"></div>
+      <div class="row"><button class="gh sm" id="all">Pilih semua</button><button class="gh sm" id="none">Kosongkan</button></div>
+      <details style="margin-top:10px"><summary class="m" style="cursor:pointer">Alamat hp.html</summary><input id="url" placeholder="https://.../hp.html"></details></div>
+
+    <div class="gl"><h2>2. QR untuk <span id="qn2" style="color:var(--a)">-</span></h2>
+      <div id="qr"></div>
+      <p class="m">Pilih HP di daftar lalu ketuk <b>QR</b> untuk menampilkannya. Satu QR untuk satu HP.</p></div>
+
+    <div class="gl"><h2>3. Susun notifikasi</h2>
+      <p class="m">Dikirim ke HP yang dicentang (<span id="cnt">0</span>).</p>
+      <input id="ti" placeholder="Judul">
+      <textarea id="ms" placeholder="Isi pesan"></textarea>
+      <div class="two"><select id="pr"><option value="1">Sangat rendah</option><option value="2">Rendah</option><option value="3" selected>Normal</option><option value="4">Tinggi</option><option value="5">Mendesak (alarm)</option></select>
+      <select id="dl"><option value="">Kirim sekarang</option><option value="30s">Tunda 30 detik</option><option value="5m">Tunda 5 menit</option><option value="30m">Tunda 30 menit</option><option value="1h">Tunda 1 jam</option></select></div>
+      <select id="sn"><option value="">Bunyi: sesuai pengaturan HP</option><option value="beep">Bunyi: Beep</option><option value="sirine">Bunyi: Sirine</option><option value="bel">Bunyi: Bel</option><option value="klakson">Bunyi: Klakson</option><option value="dering">Bunyi: Dering telepon</option></select>
+      <input id="ck" placeholder="Tautan yang bisa dibuka dari pesan (opsional)">
+      <div class="row"><button id="send">Kirim ke HP terpilih</button><button class="gh" id="cari">🔔 Cari HP terpilih</button><button class="gh" id="stp">🔕 Hentikan bunyi</button></div></div>
+
+    <div class="gl"><h2>4. Pesan cepat</h2>
+      <div class="row" id="qm" style="margin-top:0"></div>
+      <div class="row"><input id="qn" placeholder="Tulis pesan cepat" style="flex:1;margin:0"><button class="gh" id="qs">Simpan</button></div>
+      <h2 style="margin-top:18px">Log</h2><pre id="log">Belum ada aktivitas.</pre></div>
+  </div>
+</div>
+<script>
+const $=s=>document.querySelector(s),NT='https://ntfy.sh/',hex=p=>p+'-'+Array.from(crypto.getRandomValues(new Uint8Array(16)),b=>b.toString(16).padStart(2,'0')).join('');
+const ld=(k,d)=>{try{return JSON.parse(localStorage.getItem(k)||'')??d}catch(e){return d}},sv=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let DEV=ld('nt-dev',[]),QM=ld('nt-qm',[]),R=ld('nt-reply','');
+if(!/^lp-[0-9a-f]{32}$/.test(R)){R=hex('lp');sv('nt-reply',R)}
+const seen={};let show=null;
+$('#url').value=location.protocol==='file:'?'':location.href.replace(/[^/?#]*([?#].*)?$/,'')+'hp.html';
+const log=m=>{const l=$('#log');if(l.textContent==='Belum ada aktivitas.')l.textContent='';l.textContent=new Date().toLocaleTimeString('id-ID')+'  '+m+'\n'+l.textContent};
+const sndO=()=>{const v=$('#sn').value;return v?{tags:['snd-'+v]}:{}};
+const STOP={title:'stop',message:'stop',tags:['cmd-stop']};
+const on=d=>Date.now()-(seen[d.t]||0)<80000;
+
+function qr(d){show=d;$('#qn2').textContent=d?d.n:'-';const q=$('#qr'),u=$('#url').value.trim();q.innerHTML='';
+  if(!d){q.textContent='Pilih HP di daftar.';return}
+  if(!/^https?:\/\//i.test(u)){q.textContent='Buka halaman ini dari alamat online (GitHub Pages), atau isi alamat hp.html.';return}
+  new QRCode(q,{text:u+'?t='+d.t+'&r='+R+'&n='+encodeURIComponent(d.n),width:200,height:200,colorDark:'#0e1a14',colorLight:'#ffffff'})}
+function render(){const box=$('#dv');box.innerHTML='';
+  if(!DEV.length)box.innerHTML='<p class="m" style="margin-top:10px">Belum ada HP. Tambahkan lewat kolom di atas.</p>';
+  DEV.forEach((d,i)=>{const r=document.createElement('div');r.className='dev';
+    const c=document.createElement('input');c.type='checkbox';c.checked=d.s!==false;c.onchange=()=>{d.s=c.checked;sv('nt-dev',DEV);cnt()};
+    const dot=document.createElement('span');dot.className='dot'+(on(d)?' on':'');dot.title=on(d)?'Terhubung':'Belum terhubung';
+    const n=document.createElement('span');n.className='n';n.textContent=d.n;
+    const mk=(t,f,g)=>{const b=document.createElement('button');b.className='sm'+(g?' gh':'');b.textContent=t;b.onclick=f;return b};
+    r.append(c,dot,n,mk('QR',()=>qr(d)),mk('🔔',()=>kirim([d],{title:'🚨 Cari HP',message:'Panggilan dari laptop',priority:5,...sndO()},'Cari '+d.n),1),mk('🔕',()=>kirim([d],STOP,'Hentikan bunyi'),1),mk('✕',()=>{if(confirm('Hapus '+d.n+'?')){DEV.splice(i,1);sv('nt-dev',DEV);if(show===d)qr(DEV[0]||null);render()}},1));
+    box.appendChild(r)});cnt()}
+const cnt=()=>$('#cnt').textContent=DEV.filter(d=>d.s!==false).length;
+const sel=()=>DEV.filter(d=>d.s!==false);
+
+async function kirim(list,o,label){
+  if(!list.length){log('✗ Pilih minimal satu HP');return}
+  for(const d of list){try{const r=await fetch(NT,{method:'POST',body:JSON.stringify({topic:d.t,...o})});if(!r.ok)throw 0;log('✓ '+label+' → '+d.n)}catch(e){log('✗ Gagal: '+label+' → '+d.n)}}}
+
+$('#add').onclick=()=>{const n=$('#nn').value.trim().slice(0,30);if(!n)return;if(DEV.length>=20){alert('Maksimal 20 HP.');return}
+  const d={n,t:hex('hp'),s:true};DEV.push(d);sv('nt-dev',DEV);$('#nn').value='';render();qr(d)};
+$('#nn').onkeydown=e=>{if(e.key==='Enter')$('#add').click()};
+$('#all').onclick=()=>{DEV.forEach(d=>d.s=true);sv('nt-dev',DEV);render()};
+$('#none').onclick=()=>{DEV.forEach(d=>d.s=false);sv('nt-dev',DEV);render()};
+$('#send').onclick=()=>{const o={title:$('#ti').value.trim()||'Dari laptop',message:$('#ms').value.trim()||'(tanpa isi)',priority:+$('#pr').value};
+  const c=$('#ck').value.trim();if(/^https?:\/\//i.test(c))o.click=c;if($('#dl').value)o.delay=$('#dl').value;Object.assign(o,sndO());kirim(sel(),o,'Kirim: '+o.title)};
+$('#cari').onclick=()=>kirim(sel(),{title:'🚨 Cari HP',message:'Panggilan dari laptop',priority:5,...sndO()},'Cari HP');
+$('#stp').onclick=()=>kirim(sel(),STOP,'Hentikan bunyi');
+
+function qm(){$('#qm').innerHTML='';QM.forEach((t,i)=>{const c=document.createElement('span');c.className='chip';c.textContent=t;const x=document.createElement('b');x.textContent='✕';x.onclick=e=>{e.stopPropagation();QM.splice(i,1);sv('nt-qm',QM);qm()};c.appendChild(x);c.onclick=()=>kirim(sel(),{title:'Dari laptop',message:t},'Pesan cepat');$('#qm').appendChild(c)});if(!QM.length)$('#qm').innerHTML='<span class="m">Belum ada.</span>'}
+$('#qs').onclick=()=>{const v=$('#qn').value.trim();if(v){QM.push(v.slice(0,200));$('#qn').value='';sv('nt-qm',QM);qm()}};
+$('#url').onchange=()=>qr(show);
+
+// status HP: tiap HP mengirim "ping" ke saluran balasan laptop
+function dengar(){const es=new EventSource(NT+R+'/sse?since=2m');
+  es.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(x){return}
+    if(m.event!=='message'||m.message!=='ping')return;
+    const d=DEV.find(x=>x.t===m.title);if(!d)return;const was=on(d);seen[d.t]=Date.now();if(!was){log('● '+d.n+' terhubung');render()}}}
+setInterval(render,10000);
+qm();render();qr(DEV[0]||null);dengar();
+</script>
+</body>
+</html>
