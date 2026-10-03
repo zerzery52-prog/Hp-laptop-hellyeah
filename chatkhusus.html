@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2f5bff">
+<title>Meta AI - Chat HP ke HP</title>
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#14213d;--mut:#6b7691;--me:#2f5bff;--them:#e4e9f5;--line:#dde2ef}
+[data-t=dark]{--bg:#0e1424;--card:#171f35;--ink:#eaf0ff;--mut:#8f9bbd;--them:#222c48;--line:#27324f}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%}
+body{font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding-top:env(safe-area-inset-top)}
+.screen{display:none;height:100%;flex-direction:column}
+.screen.on{display:flex}
+#pair{overflow-y:auto;padding:24px;align-items:center}
+.box{width:100%;max-width:400px;margin:auto}
+.ring{width:84px;height:84px;border-radius:50%;background:conic-gradient(#2f5bff,#8a4dff,#ff4d8d,#2f5bff);display:grid;place-items:center;margin-bottom:18px}
+.ring::after{content:"";width:54px;height:54px;border-radius:50%;background:var(--bg)}
+.ring.s{width:38px;height:38px;margin:0;flex:none}
+.ring.s::after{width:24px;height:24px;background:var(--card)}
+h1{font-size:32px;letter-spacing:-.6px}
+h2{font-size:17px;margin:20px 0 4px}
+.sub{color:var(--mut);margin:6px 0 16px}
+label{display:block;font-size:13px;color:var(--mut);margin:14px 0 6px}
+input,textarea{width:100%;font:inherit;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;outline:none}
+input:focus,textarea:focus{border-color:var(--me)}
+textarea.c{font:12px/1.3 ui-monospace,Menlo,monospace;height:84px;resize:none;word-break:break-all}
+.rowf{display:flex;gap:8px;margin-top:8px}
+.rowf>*{flex:1}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 16px;background:var(--me);color:#fff}
+button.g{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible{outline:3px solid #8aa2ff;outline-offset:2px}
+.step{display:none;margin-top:6px}
+.step.on{display:block}
+.note{font-size:12.5px;color:var(--mut);margin-top:14px}
+#err{color:#d93a5c;font-size:13.5px;min-height:20px;margin-top:10px}
+header{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--card);border-bottom:1px solid var(--line)}
+header .t{flex:1;min-width:0}
+header b{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+header small{color:var(--mut);font-size:12.5px}
+header button{padding:8px 11px;font-size:14px}
+#msgs{flex:1;overflow-y:auto;padding:14px 12px;display:flex;flex-direction:column;gap:6px}
+.m{max-width:82%;padding:8px 12px;border-radius:16px 16px 16px 4px;background:var(--them);align-self:flex-start;overflow-wrap:anywhere}
+.m.me{align-self:flex-end;background:var(--me);color:#fff;border-radius:16px 16px 4px 16px}
+.m .x{white-space:pre-wrap}
+.m time{display:block;font-size:11px;opacity:.65;text-align:right;margin-top:2px}
+.sys{align-self:center;font-size:12.5px;color:var(--mut);text-align:center;max-width:90%;padding:6px 0}
+#typ{height:20px;padding:0 14px;font-size:12.5px;color:var(--mut)}
+.emo{display:flex;gap:2px;padding:2px 8px;overflow-x:auto;background:var(--card);border-top:1px solid var(--line)}
+.emo button{background:none;padding:4px 8px;font-size:20px}
+.comp{display:flex;gap:8px;padding:8px 10px calc(8px + env(safe-area-inset-bottom));background:var(--card);align-items:flex-end}
+.comp textarea{resize:none;height:44px;max-height:120px;border-radius:22px}
+.comp button{border-radius:22px;height:44px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:20px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.on{opacity:1}
+</style>
+</head>
+<body>
+
+<section id="pair" class="screen on">
+  <div class="box">
+    <div class="ring"></div>
+    <h1>Meta AI</h1>
+    <p class="sub">Chat langsung dari HP ke HP, tanpa server dan tanpa akun.</p>
+    <label for="name">Nama kamu</label>
+    <input id="name" maxlength="24" autocomplete="nickname">
+
+    <div id="choose">
+      <h2>Kamu mau apa?</h2>
+      <div class="rowf">
+        <button id="bHost" type="button">Mulai chat baru</button>
+        <button id="bJoin" class="g" type="button">Terima ajakan</button>
+      </div>
+    </div>
+
+    <div id="host" class="step">
+      <h2>1. Kirim kode ini ke temanmu</h2>
+      <textarea id="o1" class="c" readonly aria-label="Kode ajakan"></textarea>
+      <div class="rowf"><button id="sh1" type="button">Bagikan</button><button id="cp1" class="g" type="button">Salin</button></div>
+      <h2>2. Tempel kode balasan dari temanmu</h2>
+      <textarea id="i1" class="c" aria-label="Kode balasan"></textarea>
+      <div class="rowf"><button id="ok1" type="button">Sambungkan</button></div>
+    </div>
+
+    <div id="join" class="step">
+      <h2>1. Tempel kode ajakan dari temanmu</h2>
+      <textarea id="i2" class="c" aria-label="Kode ajakan"></textarea>
+      <div class="rowf"><button id="mk2" type="button">Buat kode balasan</button></div>
+      <div id="r2" class="step">
+        <h2>2. Kirim kode balasan ini ke temanmu</h2>
+        <textarea id="o2" class="c" readonly aria-label="Kode balasan"></textarea>
+        <div class="rowf"><button id="sh2" type="button">Bagikan</button><button id="cp2" class="g" type="button">Salin</button></div>
+        <p class="note">Setelah temanmu menyambungkan, chat terbuka otomatis.</p>
+      </div>
+    </div>
+
+    <div id="err"></div>
+    <p class="note">Kode dikirim lewat WhatsApp atau aplikasi lain. Setelah tersambung, pesan langsung antar HP dan tidak lewat server. Keduanya harus online saat menyambung.</p>
+  </div>
+</section>
+
+<section id="chat" class="screen">
+  <header>
+    <div class="ring s"></div>
+    <div class="t"><b id="pn">Menyambung…</b><small id="st">menunggu</small></div>
+    <button class="g" id="thm" type="button">Tema</button>
+    <button class="g" id="out" type="button">Keluar</button>
+  </header>
+  <div id="msgs" aria-live="polite"></div>
+  <div id="typ"></div>
+  <div class="emo" id="emo"></div>
+  <div class="comp">
+    <textarea id="in" rows="1" placeholder="Tulis pesan" aria-label="Tulis pesan"></textarea>
+    <button id="snd" type="button" disabled>Kirim</button>
+  </div>
+</section>
+<div id="toast"></div>
+
+<script>
+const $=s=>document.querySelector(s),L=localStorage,root=document.documentElement;
+root.dataset.t=L.mp_t||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");
+const CONF={iceServers:[{urls:"stun:stun.l.google.com:19302"},{urls:"stun:stun1.l.google.com:19302"}]};
+let me=L.mp_name||"",pc,ch,tt;
+$("#name").value=me;
+
+const show=(id,on=true)=>$(id).classList.toggle("on",on);
+const err=t=>$("#err").textContent=t||"";
+function toast(t){const e=$("#toast");e.textContent=t;e.classList.add("on");setTimeout(()=>e.classList.remove("on"),1800)}
+const hhmm=t=>new Date(t).toLocaleTimeString("id-ID",{hour:"2-digit",minute:"2-digit"});
+
+/* kode: SDP dikompres lalu dijadikan teks */
+async function enc(o){
+  const s=JSON.stringify(o);
+  try{
+    const c=new Blob([s]).stream().pipeThrough(new CompressionStream("deflate-raw"));
+    const b=new Uint8Array(await new Response(c).arrayBuffer());
+    return "z"+btoa(String.fromCharCode(...b));
+  }catch(e){return "p"+btoa(unescape(encodeURIComponent(s)))}
+}
+async function dec(t){
+  t=t.replace(/\s/g,"");
+  if(t[0]=="z"){
+    const b=Uint8Array.from(atob(t.slice(1)),c=>c.charCodeAt(0));
+    const d=new Blob([b]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+    return JSON.parse(await new Response(d).text());
+  }
+  return JSON.parse(decodeURIComponent(escape(atob(t.slice(1)))));
+}
+const gathered=p=>new Promise(r=>{
+  if(p.iceGatheringState=="complete")return r();
+  p.onicegatheringstatechange=()=>p.iceGatheringState=="complete"&&r();
+  setTimeout(r,5000);
+});
+function newPC(){
+  pc=new RTCPeerConnection(CONF);
+  pc.onconnectionstatechange=()=>{
+    if(["failed","disconnected","closed"].includes(pc.connectionState))lost();
+  };
+}
+function takeName(){
+  me=$("#name").value.trim();
+  if(!me){err("Isi nama kamu dulu.");return false}
+  L.mp_name=me;err();return true;
+}
+async function share(code){
+  const txt="Ajakan chat Meta AI. Tempel kode ini di aplikasi:\n\n"+code;
+  try{
+    if(navigator.share){await navigator.share({text:txt});return}
+    await navigator.clipboard.writeText(code);toast("Kode disalin");
+  }catch(e){if(e.name!="AbortError"){await copy(code)}}
+}
+async function copy(code){
+  try{await navigator.clipboard.writeText(code);toast("Kode disalin")}
+  catch(e){prompt("Salin kode ini:",code)}
+}
+
+/* pihak yang mengajak */
+$("#bHost").onclick=async()=>{
+  if(!takeName())return;
+  show("#choose",false);show("#host");
+  $("#o1").value="Membuat kode…";
+  try{
+    newPC();
+    ch=pc.createDataChannel("chat");wire();
+    await pc.setLocalDescription(await pc.createOffer());
+    await gathered(pc);
+    $("#o1").value=await enc(pc.localDescription);
+  }catch(e){err("Gagal membuat kode. Muat ulang halaman lalu coba lagi.")}
+};
+$("#sh1").onclick=()=>share($("#o1").value);
+$("#cp1").onclick=()=>copy($("#o1").value);
+$("#ok1").onclick=async()=>{
+  try{
+    err();
+    await pc.setRemoteDescription(await dec($("#i1").value));
+    openChat();
+  }catch(e){err("Kode balasan tidak valid. Tempel ulang kode utuh dari temanmu.")}
+};
+
+/* pihak yang menerima */
+$("#bJoin").onclick=()=>{if(!takeName())return;show("#choose",false);show("#join")};
+$("#mk2").onclick=async()=>{
+  try{
+    err();
+    const offer=await dec($("#i2").value);
+    newPC();
+    pc.ondatachannel=e=>{ch=e.channel;wire()};
+    await pc.setRemoteDescription(offer);
+    await pc.setLocalDescription(await pc.createAnswer());
+    $("#o2").value="Membuat kode…";show("#r2");
+    await gathered(pc);
+    $("#o2").value=await enc(pc.localDescription);
+    openChat();
+  }catch(e){err("Kode ajakan tidak valid. Tempel ulang kode utuh dari temanmu.")}
+};
+$("#sh2").onclick=()=>share($("#o2").value);
+$("#cp2").onclick=()=>copy($("#o2").value);
+
+/* chat */
+function openChat(){show("#pair",false);show("#chat");sys("Menunggu koneksi dengan temanmu…")}
+function wire(){
+  ch.onopen=()=>{
+    ch.send(JSON.stringify({t:"h",name:me}));
+    $("#snd").disabled=false;$("#st").textContent="terhubung langsung";
+    sys("Tersambung. Pesan langsung antar HP.");
+  };
+  ch.onclose=lost;
+  ch.onmessage=e=>{
+    let d;try{d=JSON.parse(e.data)}catch(x){return}
+    if(d.t=="h"){$("#pn").textContent=String(d.name).slice(0,24)}
+    else if(d.t=="y"){$("#typ").textContent=d.on?$("#pn").textContent+" sedang mengetik…":""}
+    else if(d.t=="m"){bubble(String(d.text),d.ts,false);ping()}
+  };
+}
+let dead=false;
+function lost(){
+  if(dead)return;dead=true;
+  $("#snd").disabled=true;$("#st").textContent="terputus";$("#typ").textContent="";
+  sys("Koneksi terputus. Tekan Keluar lalu sambungkan ulang dengan kode baru.");
+}
+function sys(t){const d=document.createElement("div");d.className="sys";d.textContent=t;$("#msgs").append(d);$("#msgs").scrollTop=1e9}
+function bubble(text,ts,mine){
+  const d=document.createElement("div");d.className="m"+(mine?" me":"");
+  const x=document.createElement("div");x.className="x";x.textContent=text;
+  const t=document.createElement("time");t.textContent=hhmm(ts);
+  d.append(x,t);$("#msgs").append(d);$("#msgs").scrollTop=1e9;
+}
+function ping(){
+  try{
+    navigator.vibrate&&navigator.vibrate(60);
+    const a=new(window.AudioContext||window.webkitAudioContext)(),o=a.createOscillator(),g=a.createGain();
+    o.connect(g);g.connect(a.destination);o.frequency.value=880;g.gain.value=.05;
+    o.onended=()=>a.close();o.start();o.stop(a.currentTime+.12);
+  }catch(e){}
+  if(document.hidden)document.title="• Pesan baru - Meta AI";
+}
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)document.title="Meta AI - Chat HP ke HP"});
+
+const inp=$("#in");
+const fit=()=>{inp.style.height="44px";inp.style.height=Math.min(inp.scrollHeight,120)+"px"};
+function send(){
+  const t=inp.value.trim();
+  if(!t||!ch||ch.readyState!="open")return;
+  const ts=Date.now();
+  ch.send(JSON.stringify({t:"m",text:t.slice(0,2000),ts}));
+  bubble(t.slice(0,2000),ts,true);
+  inp.value="";fit();ch.send(JSON.stringify({t:"y",on:false}));
+}
+$("#snd").onclick=send;
+inp.oninput=()=>{
+  fit();
+  if(ch&&ch.readyState=="open"){
+    ch.send(JSON.stringify({t:"y",on:true}));
+    clearTimeout(tt);tt=setTimeout(()=>ch.readyState=="open"&&ch.send(JSON.stringify({t:"y",on:false})),2000);
+  }
+};
+inp.onkeydown=e=>{if(e.key=="Enter"&&!e.shiftKey&&!matchMedia("(pointer:coarse)").matches){e.preventDefault();send()}};
+["😀","😂","❤️","👍","🙏","🔥","😮","🎉"].forEach(e=>{
+  const b=document.createElement("button");b.type="button";b.textContent=e;b.setAttribute("aria-label","Sisipkan "+e);
+  b.onclick=()=>{inp.value+=e;inp.focus();fit()};$("#emo").append(b);
+});
+$("#thm").onclick=()=>{root.dataset.t=L.mp_t=root.dataset.t=="dark"?"light":"dark"};
+$("#out").onclick=()=>{if(confirm("Keluar dari chat ini?")){try{pc.close()}catch(e){}location.reload()}};
+</script>
+</body>
+</html>
